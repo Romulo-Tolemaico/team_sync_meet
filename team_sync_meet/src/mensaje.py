@@ -1,0 +1,2 @@
+class Mensjae():
+    pass
