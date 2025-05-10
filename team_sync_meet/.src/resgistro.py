@@ -1,5 +1,5 @@
 import random
-from colorama import init, Fore, Style
+from colorama import init, Fore
 
 init(autoreset=True)
 
@@ -16,7 +16,7 @@ class Registro:
             self.nombre = self.generarNombreAutomatico()
         else:
             self.nombre = entrada
-        print(Fore.CYAN + f"\n👤 {self.nombre} ingresó al chat.")
+        print(Fore.CYAN + f"\n👤 {self.nombre} ingresó al chat")
         return self.nombre
 
 if __name__ == "__main__":
