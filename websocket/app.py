@@ -10,11 +10,9 @@ socketio = SocketIO(
     app,
     cors_allowed_origins="*",
     transports=['websocket'],
-    async_mode='gevent',
+    async_mode='eventlet',
     logger=True,
-    engineio_logger=False,
-    ping_timeout=30,  # Aumenta el tiempo de espera
-    ping_interval=10  # Verifica la conexión con más frecuencia
+    engineio_logger=False
 )
 
 # Almacén de usuarios y mensajes
