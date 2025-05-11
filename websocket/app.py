@@ -65,21 +65,14 @@ def handle_set_username(data):
     username = data['username'].strip() or f"Usuario-{client_id[:4]}"
     
     active_users[client_id] = username
-    
-    # Registro en servidor
     ConsoleDesign.print_event(f"Usuario registrado: {username}", "success")
-    ConsoleDesign.print_event(f"Total de usuarios: {len(active_users)}", "info")
-    
-    # Notificar a todos
     broadcast_system_message(f"✨ {username} se ha unido al chat", "success")
     
-    # Enviar historial de chat al nuevo usuario
     emit('chat_history', {
-        'history': chat_history[-20:],  # Últimos 20 mensajes
+        'history': chat_history[-20:],  
         'users': list(active_users.values())
     })
     
-    # Actualizar lista de usuarios para todos
     emit('update_users', list(active_users.values()), broadcast=True)
 
 @socketio.on('disconnect')
@@ -102,19 +95,21 @@ def handle_message(data):
             message_data = {
                 'username': username,
                 'message': message,
-                'time': datetime.now().strftime('%H:%M:%S'),
-                'type': 'user_message'
+                'time': datetime.now().strftime('%H:%M:%S')
             }
-            
-            # Almacenar en historial
             chat_history.append(message_data)
-            
-            # Registrar en servidor
             ConsoleDesign.print_event(f"{username}: {message}", "message")
-            
-            # Transmitir a todos
             emit('new_message', message_data, broadcast=True)
 
 if __name__ == '__main__':
+    ConsoleDesign.print_header("SERVIDOR DE CHAT ELEGANTE")
+    print(f"{ConsoleDesign.GREEN}• Modo: WebSocket puro")
+    print(f"• Sala única con historial de mensajes")
+    print(f"• Notificaciones elegantes de conexión/desconexión")
+    print(f"• Registro detallado en consola{ConsoleDesign.END}\n")
+    
+    # Detectar si estamos en Render o Local
     port = int(os.environ.get("PORT", 5000))
-    socketio.run(app, host="0.0.0.0", port=port)
+    debug_mode = os.environ.get("FLASK_DEBUG", "false").lower() == "true"
+    
+    socketio.run(app, host="0.0.0.0", port=port, debug=debug_mode)
