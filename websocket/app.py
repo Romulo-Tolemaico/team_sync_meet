@@ -1,27 +1,27 @@
-from flask import Flask, request
-from flask_socketio import SocketIO, emit
+from flask import Flask, solicitud
+from flask_socketio import SocketIO, emitir
 from datetime import datetime
 import time, os
 
-app = Flask(__name__)
-app.config['SECRET_KEY'] = 'tu_clave_secreta_aqui'
+aplicacion = Flask(__name__)
+aplicacion.config['CLAVE_SECRETA'] = 'tu_clave_secreta_aqui'
 
 socketio = SocketIO(
-    app,
-    cors_allowed_origins="*",
-    transports=['websocket'],
-    async_mode='eventlet',
-    logger=True,
-    engineio_logger=False
+    aplicacion,
+    origenes_permitidos_cors="*",
+    transportes=['websocket'],
+    modo_asincrono='eventlet',
+    registrador=True,
+    registrador_engineio=False
 )
 
 # Almacenamiento de usuarios y mensajes
-active_users = {}
-chat_history = []
+usuarios_activos = {}
+historial_chat = []
 
-class ConsoleDesign:
+class DisenioConsola:
     """Estilos para la consola del servidor"""
-    HEADER = '\033[95m'
+    ENCABEZADO = '\033[95m'
     AZUL = '\033[94m'
     VERDE = '\033[92m'
     AMARILLO = '\033[93m'
@@ -31,85 +31,85 @@ class ConsoleDesign:
     FIN = '\033[0m'
 
     @classmethod
-    def print_header(cls, message):
-        print(f"\n{cls.NEGRITA}{cls.AZUL}=== {message} ==={cls.FIN}")
+    def imprimir_encabezado(cls, mensaje):
+        print(f"\n{cls.NEGRITA}{cls.AZUL}=== {mensaje} ==={cls.FIN}")
 
     @classmethod
-    def print_event(cls, message, event_type="info"):
+    def imprimir_evento(cls, mensaje, tipo_evento="info"):
         colores = {
             "info": cls.AZUL,
             "success": cls.VERDE,
             "warning": cls.AMARILLO,
             "error": cls.ROJO,
-            "message": cls.HEADER
+            "message": cls.ENCABEZADO
         }
-        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-        print(f"{colores[event_type]}[{timestamp}] {message}{cls.FIN}")
+        marca_tiempo = time.strftime("%Y-%m-%d %H:%M:%S")
+        print(f"{colores[tipo_evento]}[{marca_tiempo}] {mensaje}{cls.FIN}")
 
-def broadcast_system_message(message, event_type="info"):
+def difundir_mensaje_sistema(mensaje, tipo_evento="info"):
     """Envía mensajes del sistema a todos los clientes"""
-    emit('system_message', {
-        'content': message,
-        'type': event_type,
-        'time': datetime.now().strftime('%H:%M:%S')
+    emitir('mensaje_sistema', {
+        'contenido': mensaje,
+        'tipo': tipo_evento,
+        'hora': datetime.now().strftime('%H:%M:%S')
     }, broadcast=True)
 
-@socketio.on('connect')
-def handle_connect():
-    ConsoleDesign.print_event(f"Nueva conexión desde {request.remote_addr}", "info")
-    emit('request_username')
+@socketio.on('conectar')
+def manejar_conexion():
+    DisenioConsola.imprimir_evento(f"Nueva conexión desde {solicitud.remote_addr}", "info")
+    emitir('solicitar_usuario')
 
-@socketio.on('set_username')
-def handle_set_username(data):
-    client_id = request.sid
-    username = data['username'].strip() or f"Usuario-{client_id[:4]}"
+@socketio.on('establecer_usuario')
+def manejar_establecer_usuario(datos):
+    id_cliente = solicitud.sid
+    usuario = datos['usuario'].strip() or f"Usuario-{id_cliente[:4]}"
     
-    active_users[client_id] = username
-    ConsoleDesign.print_event(f"Usuario registrado: {username}", "success")
-    broadcast_system_message(f"✨ {username} se ha unido al chat", "success")
+    usuarios_activos[id_cliente] = usuario
+    DisenioConsola.imprimir_evento(f"Usuario registrado: {usuario}", "success")
+    difundir_mensaje_sistema(f"✨ {usuario} se ha unido al chat", "success")
     
-    emit('chat_history', {
-        'history': chat_history[-20:],  
-        'users': list(active_users.values())
+    emitir('historial_chat', {
+        'historial': historial_chat[-20:],  
+        'usuarios': list(usuarios_activos.values())
     })
     
-    emit('update_users', list(active_users.values()), broadcast=True)
+    emitir('actualizar_usuarios', list(usuarios_activos.values()), broadcast=True)
 
-@socketio.on('disconnect')
-def handle_disconnect():
-    client_id = request.sid
-    if client_id in active_users:
-        username = active_users.pop(client_id)
-        ConsoleDesign.print_event(f"Usuario desconectado: {username}", "warning")
-        broadcast_system_message(f"👋 {username} ha abandonado el chat", "warning")
-        emit('update_users', list(active_users.values()), broadcast=True)
+@socketio.on('desconectar')
+def manejar_desconexion():
+    id_cliente = solicitud.sid
+    if id_cliente in usuarios_activos:
+        usuario = usuarios_activos.pop(id_cliente)
+        DisenioConsola.imprimir_evento(f"Usuario desconectado: {usuario}", "warning")
+        difundir_mensaje_sistema(f"👋 {usuario} ha abandonado el chat", "warning")
+        emitir('actualizar_usuarios', list(usuarios_activos.values()), broadcast=True)
 
-@socketio.on('send_message')
-def handle_message(data):
-    client_id = request.sid
-    if client_id in active_users:
-        username = active_users[client_id]
-        message = data['message'].strip()
+@socketio.on('enviar_mensaje')
+def manejar_mensaje(datos):
+    id_cliente = solicitud.sid
+    if id_cliente in usuarios_activos:
+        usuario = usuarios_activos[id_cliente]
+        mensaje = datos['mensaje'].strip()
         
-        if message:
-            message_data = {
-                'username': username,
-                'message': message,
-                'time': datetime.now().strftime('%H:%M:%S')
+        if mensaje:
+            datos_mensaje = {
+                'usuario': usuario,
+                'mensaje': mensaje,
+                'hora': datetime.now().strftime('%H:%M:%S')
             }
-            chat_history.append(message_data)
-            ConsoleDesign.print_event(f"{username}: {message}", "message")
-            emit('new_message', message_data, broadcast=True)
+            historial_chat.append(datos_mensaje)
+            DisenioConsola.imprimir_evento(f"{usuario}: {mensaje}", "message")
+            emitir('nuevo_mensaje', datos_mensaje, broadcast=True)
 
 if __name__ == '__main__':
-    ConsoleDesign.print_header("SERVIDOR DE CHAT ELEGANTE")
-    print(f"{ConsoleDesign.VERDE}• Modo: WebSocket puro")
+    DisenioConsola.imprimir_encabezado("SERVIDOR DE CHAT ELEGANTE")
+    print(f"{DisenioConsola.VERDE}• Modo: WebSocket puro")
     print(f"• Sala única con historial de mensajes")
     print(f"• Notificaciones elegantes de conexión/desconexión")
-    print(f"• Registro detallado en consola{ConsoleDesign.FIN}\n")
+    print(f"• Registro detallado en consola{DisenioConsola.FIN}\n")
     
     # Detectar si estamos en Render o Local
-    port = int(os.environ.get("PORT", 5000))
-    debug_mode = os.environ.get("FLASK_DEBUG", "false").lower() == "true"
+    puerto = int(os.environ.get("PUERTO", 5000))
+    modo_depuracion = os.environ.get("FLASK_DEBUG", "false").lower() == "true"
     
-    socketio.run(app, host="0.0.0.0", port=port, debug=debug_mode)
+    socketio.run(aplicacion, host="0.0.0.0", port=puerto, debug=modo_depuracion)
